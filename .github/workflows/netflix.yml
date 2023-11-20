@@ -1,4 +1,4 @@
-name: Build,Analyze,scan
+name: Build, Analyze, and Scan
 
 on:
   push:
@@ -9,33 +9,36 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+
     steps:
-      - name: checkout code
+      - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for better relevance of analysis
-      - name: Build and analyze with sonarqube
+          fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+
+      - name: Build and analyze with SonarQube
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      - name: install trivy
+
+      - name: Install Trivy
         run: |
-          #install trivy
+          # Install Trivy
           sudo apt-get install wget apt-transport-https gnupg lsb-release -y
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install trivy -y
-          #command to scan files
+          # Command to scan files
           trivy fs .
 
       - name: Docker build and push
         run: |
-          #run commands to build and push docker images
+          # Run commands to build and push Docker images
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
           docker build --build-arg TMDB_V3_API_KEY=15ff6a79402b92e39887372e2486f40f -t netflix .
-          docker tag netflix sevenajay/netflix:latest
-          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
-          docker push sevenajay/netflix:latest  
+          docker tag netflix maddy/netflix:latest
+          docker push maddy/netflix:latest
         env:
           DOCKER_CLI_ACI: 1
