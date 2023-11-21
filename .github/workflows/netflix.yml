@@ -10,12 +10,12 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # Shallow clones should be disabled for better analysis relevance
       
-      - name: Build and Analyze with SonarQube
+      - name: Build and analyze with SonarQube
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -23,18 +23,21 @@ jobs:
       
       - name: Install Trivy
         run: |
+          # Install trivy
           sudo apt-get install wget apt-transport-https gnupg lsb-release -y
           wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
           echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
           sudo apt-get update
           sudo apt-get install trivy -y
+          # Command to scan files
           trivy fs .
 
       - name: Docker Build and Push
         run: |
+          # Run commands to build and push Docker images
           docker build --build-arg TMDB_V3_API_KEY=15ff6a79402b92e39887372e2486f40f -t netflix .
           docker tag netflix sevenajay/netflix:latest
-          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}
+          echo "Devops@123" | docker login -u YOUR_DOCKERHUB_USERNAME --password-stdin
           docker push sevenajay/netflix:latest
         env:
           DOCKER_CLI_ACI: 1
