@@ -7,8 +7,9 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build, Analyze, Scan
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -39,5 +40,17 @@ jobs:
           docker tag netflix netflix007/netflix:latest
           echo "Devops@123" | docker login -u netflix007 --password-stdin
           docker push netflix007/netflix:latest
-        env:
-          DOCKER_CLI_ACI: 1
+
+  deploy:
+    needs: build
+    runs-on: [aws-netflix]  # use your label here
+
+    steps:
+      - name: Pull the Docker image
+        run: docker pull netflix007/netflix:latest
+
+      - name: Trivy image scan
+        run: trivy image netflix007/netflix:latest
+
+      - name: Run the container netflix
+        run: docker run -d --name netflix -p 8081:80 netflix007/netflix:latest
