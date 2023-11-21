@@ -38,6 +38,6 @@ jobs:
           docker build --build-arg TMDB_V3_API_KEY=15ff6a79402b92e39887372e2486f40f -t netflix .
           docker tag netflix sevenajay/netflix:latest
           echo "Devops@123" | docker login -u YOUR_DOCKERHUB_USERNAME --password-stdin
-          docker push sevenajay/netflix:latest
+          docker push netflix007/netflix:latest
         env:
           DOCKER_CLI_ACI: 1
