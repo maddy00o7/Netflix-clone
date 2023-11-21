@@ -7,21 +7,20 @@ on:
 
 jobs:
   build:
-    name: Build, Analyze, Scan
+    name: Build
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Shallow clones should be disabled for better analysis relevance
-      
+
       - name: Build and analyze with SonarQube
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-      
+
       - name: Install Trivy
         run: |
           # Install trivy
@@ -40,17 +39,23 @@ jobs:
           docker tag netflix netflix007/netflix:latest
           echo "Devops@123" | docker login -u netflix007 --password-stdin
           docker push netflix007/netflix:latest
+        env:
+          DOCKER_CLI_ACI: 1
 
   deploy:
     needs: build
     runs-on: [aws-netflix]  # use your label here
-
     steps:
       - name: Pull the Docker image
         run: docker pull netflix007/netflix:latest
-
-      - name: Trivy image scan
+      - name: Install Trivy for Image Scan
+        run: |
+          sudo apt-get install wget apt-transport-https gnupg lsb-release -y
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy -y
+      - name: Trivy Image Scan
         run: trivy image netflix007/netflix:latest
-
-      - name: Run the container netflix
+      - name: Run the Netflix Container
         run: docker run -d --name netflix -p 8081:80 netflix007/netflix:latest
